@@ -241,9 +241,14 @@ cmd_loop_stop() {
   local pid
   pid="$(cat "$pid_file")"
 
-  # Try to kill the process group (kills both loop shell and child player)
+  # Kill child processes (e.g. afplay) then the loop subshell itself.
+  # kill -- -pid (process group) is attempted first but often fails because the
+  # subshell inherits the parent's PGID rather than forming its own; pkill -P
+  # handles the child-player case reliably on both macOS and Linux.
   if kill -0 "$pid" 2>/dev/null; then
-    kill -- -"$pid" 2>/dev/null || kill "$pid" 2>/dev/null || true
+    kill -- -"$pid" 2>/dev/null || true
+    pkill -P "$pid" 2>/dev/null || true
+    kill "$pid" 2>/dev/null || true
   fi
 
   rm -f "$pid_file"
@@ -303,7 +308,9 @@ cmd_session_end() {
     local pid
     pid="$(cat "$pid_file")"
     if kill -0 "$pid" 2>/dev/null; then
-      kill -- -"$pid" 2>/dev/null || kill "$pid" 2>/dev/null || true
+      kill -- -"$pid" 2>/dev/null || true
+      pkill -P "$pid" 2>/dev/null || true
+      kill "$pid" 2>/dev/null || true
     fi
     rm -f "$pid_file"
   fi
