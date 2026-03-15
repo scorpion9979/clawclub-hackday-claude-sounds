@@ -30,7 +30,7 @@ PID_DIR="/tmp"
 #                             e.g. "success,notification"
 # ---------------------------------------------------------------------------
 
-LOOP_VOLUME="${CLAUDE_SOUNDS_VOLUME:-50}"
+LOOP_VOLUME="${CLAUDE_SOUNDS_VOLUME:-30}"
 ONESHOT_VOLUME=100
 
 # Check if a sound name is disabled via CLAUDE_SOUNDS_DISABLE env var
