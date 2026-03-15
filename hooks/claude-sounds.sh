@@ -74,16 +74,20 @@ build_play_cmd() {
   local file="$2"
   local mode="$3"  # "oneshot" or "loop"
 
-  local vol_arg=""
+  local vol
   if [[ "$mode" == "loop" ]]; then
-    local vol="$LOOP_VOLUME"
-    case "$player" in
-      afplay)  vol_arg="--volume $(awk "BEGIN{printf \"%.2f\",$vol/100}")";;
-      mpv)     vol_arg="--volume=$vol";;
-      ffplay)  vol_arg="-volume $vol";;
-      paplay)  vol_arg="--volume=32768";;  # paplay uses raw PCM scale; 32768 ≈ 50%
-    esac
+    vol="$LOOP_VOLUME"
+  else
+    vol="$ONESHOT_VOLUME"
   fi
+
+  local vol_arg=""
+  case "$player" in
+    afplay)  vol_arg="--volume $(awk "BEGIN{printf \"%.2f\",$vol/100}")";;
+    mpv)     vol_arg="--volume=$vol";;
+    ffplay)  vol_arg="-volume $vol";;
+    paplay)  vol_arg="--volume=$(awk "BEGIN{printf \"%d\",$vol*65536/100}")";;
+  esac
 
   case "$player" in
     afplay)
@@ -164,16 +168,15 @@ cmd_loop_start() {
 
   local pid_file="${PID_DIR}/claude-sounds-${session_id}.pid"
 
-  # Clean up stale PID file if the process is already dead
+  # Stop any existing loop (handles interrupted sessions where loop-stop never fired)
   if [[ -f "$pid_file" ]]; then
     local old_pid
     old_pid="$(cat "$pid_file")"
-    if ! kill -0 "$old_pid" 2>/dev/null; then
-      rm -f "$pid_file"
-    else
-      # Loop already running for this session — nothing to do
-      exit 0
+    if kill -0 "$old_pid" 2>/dev/null; then
+      pkill -P "$old_pid" 2>/dev/null || true
+      kill "$old_pid" 2>/dev/null || true
     fi
+    rm -f "$pid_file"
   fi
 
   # No audio player — exit silently
@@ -213,7 +216,8 @@ cmd_loop_start() {
       local current_pid
       current_pid="$(cat "$pid_file" 2>/dev/null || echo "")"
       if [[ "$current_pid" == "$loop_pid" ]]; then
-        kill -- -"$loop_pid" 2>/dev/null || kill "$loop_pid" 2>/dev/null || true
+        pkill -P "$loop_pid" 2>/dev/null || true
+        kill "$loop_pid" 2>/dev/null || true
         rm -f "$pid_file"
       fi
     fi
@@ -242,11 +246,8 @@ cmd_loop_stop() {
   pid="$(cat "$pid_file")"
 
   # Kill child processes (e.g. afplay) then the loop subshell itself.
-  # kill -- -pid (process group) is attempted first but often fails because the
-  # subshell inherits the parent's PGID rather than forming its own; pkill -P
-  # handles the child-player case reliably on both macOS and Linux.
+  # pkill -P handles the child-player case reliably on both macOS and Linux.
   if kill -0 "$pid" 2>/dev/null; then
-    kill -- -"$pid" 2>/dev/null || true
     pkill -P "$pid" 2>/dev/null || true
     kill "$pid" 2>/dev/null || true
   fi
@@ -308,7 +309,6 @@ cmd_session_end() {
     local pid
     pid="$(cat "$pid_file")"
     if kill -0 "$pid" 2>/dev/null; then
-      kill -- -"$pid" 2>/dev/null || true
       pkill -P "$pid" 2>/dev/null || true
       kill "$pid" 2>/dev/null || true
     fi
