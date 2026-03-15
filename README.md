@@ -2,7 +2,7 @@
 
 > Zero-dependency sound effects for Claude Code, powered entirely by hooks.
 
-Plays ambient/lofi music while Claude is thinking, chimes on tool success, buzzes on errors, and dings when Claude needs your attention.
+Plays Elevator Music while Claude is thinking, Vine Boom on tool success, Fahhh on errors, and Bruh when Claude needs your attention.
 
 ---
 
@@ -10,11 +10,11 @@ Plays ambient/lofi music while Claude is thinking, chimes on tool success, buzze
 
 | Hook event | Sound file | Behavior |
 |---|---|---|
-| `UserPromptSubmit` | `thinking.mp3` | Starts looping at 50% volume while Claude works |
+| `UserPromptSubmit` | `thinking.mp3` | Loops Elevator Music while Claude works |
 | `Stop` | _(none)_ | Stops the thinking loop |
-| `PostToolUse` | `success.mp3` | One-shot chime after each successful tool call |
-| `PostToolUseFailure` | `failure.mp3` | One-shot buzz after a failed tool call |
-| `Notification` | `notification.mp3` | One-shot ding when Claude needs your attention |
+| `PostToolUse` | `success.mp3` | One-shot Vine Boom after each successful tool call |
+| `PostToolUseFailure` | `failure.mp3` | One-shot Fahhh after a failed tool call |
+| `Notification` | `notification.mp3` | One-shot Bruh when Claude needs your attention |
 
 A single bash script (`claude-sounds.sh`) handles all events. It auto-detects your system audio player and resolves sound files relative to `~/.claude/sounds/`. No Node, no Python, no external packages.
 
@@ -49,10 +49,10 @@ Then restart Claude Code. The hooks take effect on the next session.
 
 ```
 ~/.claude/sounds/
-├── thinking.mp3      # Looping ambient music (10+ sec recommended for seamless looping)
-├── success.mp3       # Short chime (< 1 sec)
-├── failure.mp3       # Short buzz (< 1 sec)
-└── notification.mp3  # Short ding (< 1 sec)
+├── thinking.mp3      # Elevator Music — looping (10+ sec recommended for seamless looping)
+├── success.mp3       # Vine Boom (< 1 sec)
+├── failure.mp3       # Fahhh (< 1 sec)
+└── notification.mp3  # Bruh (< 1 sec)
 ```
 
 MP3 and WAV formats are both supported. MP3 is tried first; WAV is used as fallback.
